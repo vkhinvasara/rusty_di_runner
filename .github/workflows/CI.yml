@@ -30,7 +30,7 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         env:
-          CIBW_BEFORE_ALL: "yum install -y openssl-devel"
+          OPENSSL_RUST_VENDORED: "1"
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter

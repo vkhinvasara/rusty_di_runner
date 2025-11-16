@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::{path::Path, time::Duration};
 
 use pyo3::{IntoPyObjectExt, prelude::*, types::PyDict};
@@ -98,11 +99,18 @@ impl RustyAnalysisClient{
     ///     ...         print(f"Document {i} failed: {result}")
     ///     ...     else:
     ///     ...         print(f"Document {i} content: {result.get('content', '')[:100]}")
-    #[pyo3(signature = (model_id, document_urls, features=None), text_signature = "(self, model_id, document_urls, features=None)")]
-    fn process_batch_documents_from_urls(&self,py:Python, model_id: String, document_urls: Vec<String>, features: Option<Vec<String>>) -> PyResult<Vec<Py<PyAny>>>{
+    #[pyo3(signature = (model_id, document_urls, features=None, max_rps=15), text_signature = "(self, model_id, document_urls, features=None, max_rps=15)")]
+    fn process_batch_documents_from_urls(&self,py:Python, 
+        model_id: String, 
+        document_urls: Vec<String>, 
+        features: Option<Vec<String>>, 
+        max_rps: Option<usize>
+    ) -> PyResult<Vec<Py<PyAny>>>{
+        let semaphore_size: usize = max_rps.unwrap_or(15);
+
         let rust_results = py.detach(move ||{
             self.runtime.block_on(async{
-             self.process_documents_async_from_urls(&model_id, document_urls, features).await
+             self.process_documents_async_from_urls(&model_id, document_urls, features, semaphore_size).await
             })
         });
         let mut py_results = Vec::new();
@@ -167,11 +175,19 @@ impl RustyAnalysisClient{
     ///     ...     else:
     ///     ...         pages = result.get('pages', [])
     ///     ...         print(f"File {i} has {len(pages)} pages")
-    #[pyo3(signature = (model_id, file_paths, features=None), text_signature = "(self, model_id, file_paths, features=None)")]
-    fn process_batch_documents_from_file_paths(&self,py:Python, model_id: String, file_paths: Vec<String>, features: Option<Vec<String>>) -> PyResult<Vec<Py<PyAny>>>{
+    #[pyo3(signature=(model_id, file_paths, features=None, max_rps=15), text_signature = "(self, model_id, file_paths, features=None, max_rps=15)")]
+    fn process_batch_documents_from_file_paths(&self,py:Python, 
+        model_id: String, 
+        file_paths: Vec<String>, 
+        features: Option<Vec<String>>,
+        max_rps: Option<usize>
+    ) -> PyResult<Vec<Py<PyAny>>>{
+
+        let semaphore_size = max_rps.unwrap_or(15);
+
         let rust_results = py.detach(move ||{
             self.runtime.block_on(async{
-             self.process_documents_async_from_file_paths(&model_id, file_paths, features).await
+             self.process_documents_async_from_file_paths(&model_id, file_paths, features, semaphore_size).await
             })
         });
         let mut py_results = Vec::new();
@@ -199,6 +215,7 @@ impl RustyAnalysisClient{
 
 use reqwest::Client;
 use futures::future::join_all;
+use tokio::sync::Semaphore;
 
 impl RustyAnalysisClient {
     
@@ -206,19 +223,28 @@ impl RustyAnalysisClient {
         &self,
         model_id: &str,
         document_urls: Vec<String>,
-        features: Option<Vec<String>>
+        features: Option<Vec<String>>,
+        semaphore_size: usize
     ) -> Vec<Result<Value, String>> {
         
-        let client = Client::new(); 
+        let client = Client::new();
+        let semaphore = Arc::new(Semaphore::new(semaphore_size)); 
         let tasks = document_urls.into_iter().map(|url| {
             let client = client.clone();
             let endpoint = self.endpoint.clone();
             let api_key = self.api_key.clone();
             let model_id_str = model_id.to_string(); 
             let features = features.clone();
-            
+            let semaphore = semaphore.clone();
+
             tokio::spawn(async move {
-                analyze_document_from_urls(&client, &model_id_str, &endpoint, &api_key, &url, &features).await
+                let _permit = semaphore.acquire().await.unwrap();
+                analyze_document_from_urls(&client,
+                    &model_id_str,
+                    &endpoint,
+                    &api_key,
+                    &url,
+                    &features).await
             })
         });
 
@@ -240,18 +266,28 @@ impl RustyAnalysisClient {
         &self,
         model_id: &str,
         file_paths: Vec<String>,
-        features: Option<Vec<String>>
+        features: Option<Vec<String>>,
+        semaphore_size: usize
     ) -> Vec<Result<Value, String>> {
         
         let client = Client::new(); 
+        let semaphore = Arc::new(Semaphore::new(semaphore_size)); 
+
         let tasks = file_paths.into_iter().map(|url| {
             let client = client.clone();
             let endpoint = self.endpoint.clone();
             let api_key = self.api_key.clone();
             let model_id_str = model_id.to_string(); 
             let features = features.clone();
+            let semaphore = semaphore.clone();
+
             tokio::spawn(async move {
-                analyze_document_from_file_path(&client, &model_id_str, &endpoint, &api_key, &url, &features).await
+                let _permit = semaphore.acquire().await.unwrap();
+                analyze_document_from_file_path(&client,
+                    &model_id_str,
+                    &endpoint, &api_key,
+                    &url, 
+                    &features).await
             })
         });
 

@@ -11,9 +11,8 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version"]
-dependencies = [
-    "azure-ai-documentintelligence>=1.0.2",
-    "azure-ai-formrecognizer==3.3.2",
-    "azure-core>=1.33.0",
-    "azure-storage-blob>=12.26.0",
-]
+
+[project.urls]
+Homepage = "https://github.com/vkhinvasara/rusty_di_runner"
+Repository = "https://github.com/vkhinvasara/rusty_di_runner"
+"Source Code" = "https://github.com/vkhinvasara/rusty_di_runner"

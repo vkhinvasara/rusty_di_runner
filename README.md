@@ -14,7 +14,7 @@ A high-performance Python library for batch document processing using Azure Docu
 
 ## Installation
 
-### From PyPI (when published)
+### From PyPI
 ```bash
 pip install rusty_di_runner
 ```

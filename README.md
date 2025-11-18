@@ -6,6 +6,7 @@ A high-performance Python library for batch document processing using Azure Docu
 
 - **🚀 High Performance**: Built with Rust and Tokio for true concurrent processing
 - **📦 Batch Processing**: Process multiple documents simultaneously with optimal throughput
+- **🔄 Load Balancing**: Round-robin distribution across multiple Azure resources
 - **⚡ Rate Limiting**: Built-in rate limiting with configurable max requests per second
 - **🔄 Flexible Input**: Support for both URLs and local file paths
 - **⚙️ Advanced Features**: Optional analysis features (OCR high resolution, formulas, style fonts, etc.)
@@ -31,13 +32,24 @@ maturin develop --release
 ## Quick Start
 
 ```python
-from rusty_di_runner import RustyAnalysisClient
+from rusty_di_runner import RustyAnalysisClient, Credentials
 
-# Initialize the client
-client = RustyAnalysisClient(
-    endpoint="https://your-resource.cognitiveservices.azure.com",
-    api_key="your-api-key"
-)
+# Initialize the client with a single resource
+credentials = [
+    Credentials(
+        endpoint="https://your-resource.cognitiveservices.azure.com",
+        api_key="your-api-key"
+    )
+]
+client = RustyAnalysisClient(credentials=credentials)
+
+# Or use multiple resources for load balancing (recommended for high throughput)
+credentials = [
+    Credentials(endpoint="https://resource1.cognitiveservices.azure.com", api_key="key1"),
+    Credentials(endpoint="https://resource2.cognitiveservices.azure.com", api_key="key2"),
+    Credentials(endpoint="https://resource3.cognitiveservices.azure.com", api_key="key3"),
+]
+client = RustyAnalysisClient(credentials=credentials)
 
 # Process documents from URLs
 urls = [
@@ -49,7 +61,7 @@ results = client.process_batch_documents_from_urls(
     model_id="prebuilt-invoice",
     document_urls=urls,
     features=["languages"],  # Optional features
-    max_rps=15  # Optional rate limiting (default: 15)
+    max_rps=15  # Optional rate limiting per resource (default: 15)
 )
 
 # Process local files
@@ -73,17 +85,33 @@ for i, result in enumerate(results):
 
 ## API Reference
 
-### RustyAnalysisClient
+### Credentials
 
-#### Constructor
+Holds authentication information for an Azure Document Intelligence resource.
 
 ```python
-client = RustyAnalysisClient(endpoint: str, api_key: str)
+from rusty_di_runner import Credentials
+
+creds = Credentials(endpoint: str, api_key: str)
 ```
 
 **Parameters:**
 - `endpoint` (str): Azure Document Intelligence endpoint URL
 - `api_key` (str): Azure subscription key for authentication
+
+**Attributes:**
+- `endpoint` (str): The endpoint URL (read-only property)
+
+### RustyAnalysisClient
+
+#### Constructor
+
+```python
+client = RustyAnalysisClient(credentials: list[Credentials])
+```
+
+**Parameters:**
+- `credentials` (list[Credentials]): List of Credentials objects for Azure Document Intelligence resources. Documents will be distributed across these resources in round-robin fashion for load balancing.
 
 #### process_batch_documents_from_urls()
 
@@ -102,10 +130,15 @@ results = client.process_batch_documents_from_urls(
 - `model_id` (str): Document Intelligence model ID (e.g., 'prebuilt-layout', 'prebuilt-invoice', 'prebuilt-read')
 - `document_urls` (list[str]): List of publicly accessible document URLs
 - `features` (list[str] | None): Optional analysis features
-- `max_rps` (int): Maximum requests per second to control rate limiting (default: 15)
+- `max_rps` (int): Maximum requests per second per resource to control rate limiting (default: 15)
 
 **Returns:**
 - `list`: List of results where each item is either a dict (success) or Exception (failure)
+
+**Load Balancing:**
+Documents are automatically distributed across all configured resources in round-robin fashion:
+- With 3 resources and 30 documents: 10 documents per resource
+- Document indices: 0,3,6,9... → Resource 0 | 1,4,7,10... → Resource 1 | 2,5,8,11... → Resource 2
 
 #### process_batch_documents_from_file_paths()
 
@@ -124,10 +157,13 @@ results = client.process_batch_documents_from_file_paths(
 - `model_id` (str): Document Intelligence model ID
 - `file_paths` (list[str]): List of local file paths
 - `features` (list[str] | None): Optional analysis features
-- `max_rps` (int): Maximum requests per second to control rate limiting (default: 15)
+- `max_rps` (int): Maximum requests per second per resource to control rate limiting (default: 15)
 
 **Returns:**
 - `list`: List of results where each item is either a dict (success) or Exception (failure)
+
+**Load Balancing:**
+Files are distributed across resources in the same round-robin fashion as URLs.
 
 ## Supported Models
 
@@ -162,10 +198,21 @@ Optional features you can enable:
 Rusty DI Runner leverages Rust's async runtime (Tokio) to process documents concurrently, providing significant performance improvements over sequential processing:
 
 - **Concurrent Processing**: All documents are processed in parallel
-- **Rate Limiting**: Configurable semaphore-based rate limiting to respect API quotas (default: 15 RPS)
+- **Round-Robin Load Balancing**: Automatically distributes documents across multiple Azure resources for optimal throughput
+- **Rate Limiting**: Configurable semaphore-based rate limiting per resource to respect API quotas (default: 15 RPS per resource)
 - **Efficient I/O**: Async file reading and HTTP requests
 - **Low Overhead**: Minimal Python GIL interaction
 - **Memory Efficient**: Streaming file uploads
+
+### Scaling with Multiple Resources
+
+Using multiple Azure Document Intelligence resources dramatically increases throughput:
+
+- **Single resource**: Limited by that resource's rate limits (typically 15 TPS)
+- **3 resources**: 3x throughput with automatic load balancing (45 TPS combined)
+- **N resources**: N×15 TPS combined throughput
+
+Example: With 3 resources and 30 documents, each resource processes 10 documents concurrently, completing the batch 3x faster than a single resource.
 
 ## Error Handling
 

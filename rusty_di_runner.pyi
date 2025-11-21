@@ -58,20 +58,23 @@ class RustyAnalysisClient:
         - Optional analysis features (OCR, formulas, fonts, etc.)
     """
     
-    def __init__(self, credentials: list[Credentials]) -> None:
+    def __init__(self, credentials: list[Credentials], enable_logs=False) -> RustyAnalysisClient:
         """
         Create a new RustyAnalysisClient instance.
         
         Args:
-            credentials: List of Credentials objects containing endpoint URLs 
-                and API keys for Azure Document Intelligence services. Documents 
-                will be distributed across these resources in round-robin fashion.
+            - **credentials**: List of Credentials objects containing endpoint URLs 
+            and API keys for Azure Document Intelligence services. Documents 
+            will be distributed across these resources in round-robin fashion.
+            
+            - **enable_logs**: Boolean flag to enable or disable logging output. 
+            Defaults to False.
         
         Returns:
-            A new client instance configured with the provided credentials
+            A new client instance configured with the provided credentials.
         
         Raises:
-            ValueError: If credentials list is empty
+            ValueError: If credentials list is empty or None.
         
         Example:
             >>> from rusty_di_runner import RustyAnalysisClient, Credentials
@@ -91,6 +94,9 @@ class RustyAnalysisClient:
             ...     Credentials(endpoint="https://resource3.cognitiveservices.azure.com", api_key="key3"),
             ... ]
             >>> client = RustyAnalysisClient(credentials=creds)
+            >>> 
+            >>> # Enable logging for debugging
+            >>> client = RustyAnalysisClient(credentials=creds, enable_logs=True)
         """
         ...
     
@@ -99,6 +105,7 @@ class RustyAnalysisClient:
         model_id: str,
         document_urls: list[str],
         features: Optional[list[str]] = None,
+        output_format: Optional[str] = None,
         max_rps: int = 15
     ) -> list[dict[str, Any] | Exception]:
         """
@@ -131,6 +138,11 @@ class RustyAnalysisClient:
                 - 'barcodes': Barcode detection and extraction
                 - 'keyValuePairs': Key-value pair extraction
                 Defaults to None (uses model default features).
+            
+            output_format: Optional output content format. Valid values are:
+                - 'text' (default): Plain text representation with line breaks
+                - 'markdown': Markdown formatted output preserving document structure
+                Defaults to 'text' if not specified.
             
             max_rps: Maximum requests per second per resource to control rate limiting.
                 Helps respect Azure API quotas. Defaults to 15.
@@ -186,6 +198,7 @@ class RustyAnalysisClient:
         model_id: str,
         file_paths: list[str],
         features: Optional[list[str]] = None,
+        output_format: Optional[str] = None,
         max_rps: int = 15
     ) -> list[dict[str, Any] | Exception]:
         """
@@ -216,6 +229,11 @@ class RustyAnalysisClient:
                 - 'barcodes': Barcode detection and extraction
                 - 'keyValuePairs': Key-value pair extraction
                 Defaults to None (uses model default features).
+            
+            output_format: Optional output content format. Valid values are:
+                - 'text' (default): Plain text representation with line breaks
+                - 'markdown': Markdown formatted output preserving document structure
+                Defaults to 'text' if not specified.
             
             max_rps: Maximum requests per second per resource to control rate limiting.
                 Helps respect Azure API quotas. Defaults to 15.

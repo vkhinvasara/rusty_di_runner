@@ -61,6 +61,7 @@ results = client.process_batch_documents_from_urls(
     model_id="prebuilt-invoice",
     document_urls=urls,
     features=["languages"],  # Optional features
+    output_format="text",  # Optional: 'text' or 'markdown' (default: 'text')
     max_rps=15  # Optional rate limiting per resource (default: 15)
 )
 
@@ -71,6 +72,7 @@ results = client.process_batch_documents_from_file_paths(
     model_id="prebuilt-layout",
     file_paths=file_paths,
     features=["ocrHighResolution", "formulas"],
+    output_format="markdown",  # Optional: 'text' or 'markdown' (default: 'text')
     max_rps=20  # Adjust rate limit as needed
 )
 
@@ -122,6 +124,7 @@ results = client.process_batch_documents_from_urls(
     model_id: str,
     document_urls: list[str],
     features: list[str] | None = None,
+    output_format: str | None = None,
     max_rps: int = 15
 )
 ```
@@ -130,6 +133,7 @@ results = client.process_batch_documents_from_urls(
 - `model_id` (str): Document Intelligence model ID (e.g., 'prebuilt-layout', 'prebuilt-invoice', 'prebuilt-read')
 - `document_urls` (list[str]): List of publicly accessible document URLs
 - `features` (list[str] | None): Optional analysis features
+- `output_format` (str | None): Optional output format - 'text' (default) or 'markdown'
 - `max_rps` (int): Maximum requests per second per resource to control rate limiting (default: 15)
 
 **Returns:**
@@ -149,6 +153,7 @@ results = client.process_batch_documents_from_file_paths(
     model_id: str,
     file_paths: list[str],
     features: list[str] | None = None,
+    output_format: str | None = None,
     max_rps: int = 15
 )
 ```
@@ -157,6 +162,7 @@ results = client.process_batch_documents_from_file_paths(
 - `model_id` (str): Document Intelligence model ID
 - `file_paths` (list[str]): List of local file paths
 - `features` (list[str] | None): Optional analysis features
+- `output_format` (str | None): Optional output format - 'text' (default) or 'markdown'
 - `max_rps` (int): Maximum requests per second per resource to control rate limiting (default: 15)
 
 **Returns:**

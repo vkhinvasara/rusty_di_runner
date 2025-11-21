@@ -48,14 +48,15 @@ impl FromStr for OutputContentFormat {
     }
 }
 
-impl ToString for OutputContentFormat{
-    fn to_string(&self) -> String {
-        match self{
-            OutputContentFormat::Markdown => String::from("markdown"),
-            OutputContentFormat::Text => String::from("text"),
+impl std::fmt::Display for OutputContentFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OutputContentFormat::Markdown => write!(f, "markdown"),
+            OutputContentFormat::Text => write!(f, "text"),
         }
     }
 }
+
 #[pymethods]
 impl RustyAnalysisClient {
     /// Create a new RustyAnalysisClient instance.
@@ -140,7 +141,7 @@ impl RustyAnalysisClient {
     ) -> PyResult<Vec<Py<PyAny>>> {
 
 
-        let semaphore_size: usize = max_rps.unwrap_or(15);
+        let semaphore_size: usize = max_rps.unwrap_or(15) * self.credentials.len();
         let format_enum = match output_format {
             Some(s) => OutputContentFormat::from_str(&s)?, // Use our impl
             None => OutputContentFormat::default(),
@@ -236,7 +237,7 @@ impl RustyAnalysisClient {
         output_format: Option<String>,
         max_rps: Option<usize>,
     ) -> PyResult<Vec<Py<PyAny>>> {
-        let semaphore_size = max_rps.unwrap_or(15);
+        let semaphore_size = max_rps.unwrap_or(15) * self.credentials.len();
         let format_enum = match output_format {
             Some(s) => OutputContentFormat::from_str(&s)?, // Use our impl
             None => OutputContentFormat::default(),

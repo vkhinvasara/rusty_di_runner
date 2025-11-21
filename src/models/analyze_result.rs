@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct AnalyzeResult {
     #[pyo3(get, set)]
     pub api_version: String,
@@ -25,6 +26,7 @@ pub struct AnalyzeResult {
 impl_to_dict!(AnalyzeResult);
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentPage {
     #[pyo3(get, set)]
     pub page_number: i32,
@@ -47,6 +49,7 @@ impl_to_dict!(DocumentPage);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentLine {
     #[pyo3(get, set)]
     pub content: String,
@@ -57,6 +60,7 @@ pub struct DocumentLine {
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentWord {
     #[pyo3(get, set)]
     pub content: String,
@@ -70,6 +74,7 @@ pub struct DocumentWord {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentParagraph {
     #[pyo3(get, set)]
     pub role: Option<String>,
@@ -84,6 +89,7 @@ impl_to_dict!(DocumentParagraph);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentTable {
     #[pyo3(get, set)]
     pub row_count: i32,
@@ -100,6 +106,7 @@ impl_to_dict!(DocumentTable);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentTableCell {
     #[pyo3(get, set)]
     pub row_index: i32,
@@ -115,6 +122,7 @@ pub struct DocumentTableCell {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentSpan {
     #[pyo3(get, set)]
     pub offset: usize,
@@ -125,6 +133,7 @@ impl_to_dict!(DocumentSpan);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct BoundingRegion {
     #[pyo3(get, set)]
     pub page_number: i32,
@@ -134,6 +143,7 @@ pub struct BoundingRegion {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[pyclass]
+#[serde(rename_all(deserialize="camelCase"))]
 pub struct DocumentLanguage {
     #[pyo3(get, set)]
     pub locale: String,
